@@ -354,7 +354,7 @@ touch package.json
 {
 	"dependencies":{
 		"express": "*"
-	}
+	},
 	"scripts":{
 		"start": "node index.js"
 	}
@@ -414,6 +414,7 @@ CMD ["npm", "start"]
 # you should commit this file
 # json file does not exist inside node:alpine image File System
 # json file is in local Hard Drive which is disconnected from docker image file system
+# files inside project directory are not available inside docker container
 # have to specify json file inside Dockerfile
 docker build .
 ```
@@ -425,7 +426,9 @@ FROM node:alpine
 
 # COPY {path1} {path2}
 # path1: path to folder to copy from on your machine relative to build context(e.g. simpleweb)
+#		local project file system
 # path2: place to copy stuff to inside the container
+# 		container file system
 COPY ./ ./
 
 RUN npm install
@@ -446,17 +449,21 @@ docker run username/simpleweb
 - Fourth build
 
 ```sh
-# container port mapping
+# container Port Mapping
 # local host is not routed to container ports
 # container has its own isolated set of ports that can receive traffics
 # need to forward localhost:8080 request to one of container ports
 # container can reach out across the internet (it can get traffics through ports)
 # port forwarding is only in RUNTIME not in Dockerfile configuration
-# docker run -p 8080:5000 <image id/tagname>
-# 8080 Route incoming requests to this port on local host to ...
-# 5000 this port inside the container.
-# ALSO CHANGE index.js source: app.listen(5000,...
-docker run -p 8080:8080 username/simpleweb
+# docker run -p {port1}:{port2} <image id/tagname>
+# 	{port1} Route incoming requests to this port on local host to ...
+# 	{port2} this port inside the container.
+# 	ALSO CHANGE index.js listening port: app.listen({port2},...
+# port forward to some port inside container
+docker run -p {local network port}:{container port} {image id}
+
+# CHANGE index.js : app.listen(5000, ...
+docker run -p 8080:5000 username/simpleweb
 ```
 
 
