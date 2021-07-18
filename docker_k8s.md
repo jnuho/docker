@@ -1,9 +1,11 @@
 
-- 도커 Image: single file with all the dependencies and configs required to run a program
-		(default file system snapshot: copied to running container when image is run)
-- 도커 Container: instance of an image. Runs a program
+### Terminology
 
-- OS 아키텍쳐
+- Docker Image: single file with all the dependencies and configs required to run a program
+		(default file system snapshot: copied to running container when image is run)
+- Docker Container: instance of an image. Runs a program
+
+### OS Architecture
 ```
 APP processes-> (system call) -> Kernel -> RESOURCES[CPU, MEMORY, HARD DISK]
 APP-> Kernel-> RESOURCES(HDD, network, RAM, CPU + 'IMAGE PROCESS(HD segment for this process)')
@@ -17,7 +19,7 @@ e.g. hello-world. This is specific to Linux Operating System.
 # In Windows and MacOs, Linux Virtual Machine is used to host containers.
 ```
 
-- 도커CLI (client)
+### Docker CLI (client)
 
 ``` sh
 docker version
@@ -47,7 +49,7 @@ docker run busybox ping google.com
 docker ps
 ```
 
-- Container LifeCycle
+### Container LifeCycle
 ``` sh
 # create container
 docker create hello-world
@@ -95,7 +97,8 @@ docker stop {container_id}
 docker kill {container_id}
 ```
 
-- Multi-command container
+### Multi-command container
+
 ```sh
 # run without docker and use redis-cli
 redis-server
@@ -113,6 +116,7 @@ redis-cli
 ```
 
 - Execute Commands inside Running Containers
+
 ```sh
 # run redis-server inside docker container
 docker run redis
@@ -129,8 +133,8 @@ docker exec -it <container_id> redis-cli
 docker exec <container_id> redis-cli
 ```
 
-
 - The Purpose of -it flag in docker exec
+
 ``` sh
 # execute an additional command inside a container
 # container runs inside virtual machine running linux
@@ -140,8 +144,8 @@ docker exec <container_id> redis-cli
 # -it allows input of your terminal directed to the running process and allows to output back over to the terminal
 ```
 
-
 - Get Command prompt in a container
+
 ``` sh
 # get full terminal access: easy debugging
 # sh: another command shell
@@ -152,6 +156,7 @@ docker exec -it <docker_container> sh
 ```
 
 - Starting a shell after starting a container
+
 ``` sh
 # go inside shell without running any other commands
 docker run -it busybox sh
@@ -162,8 +167,10 @@ docker run -it busybox sh
 > exit
 ```
 
-- Container isolation
-	- two containers do not share file systems
+### Container isolation
+
+- two containers do not share file systems
+
 ``` sh
 docker run -it busybox sh
 > touch hithere.txt
@@ -180,6 +187,7 @@ CONTAINER ID
 ```
 
 - Create Docker image
+
 ```
 Dockerfile(Configuration to define how our container should behave)
 -> Docker Client (CLI)
@@ -188,6 +196,7 @@ Dockerfile(Configuration to define how our container should behave)
 ```
 
 - Create a DockerFile
+
 ```
 1. Specifiy a base image (like OS it includes set of useful programs)
 2. Run some commands to install additional programs
@@ -242,6 +251,7 @@ CMD ["redis-server"]
 ```
 
 - Build image using Dockerfile
+
 ``` sh
 # generate image with build context (current directory);
 # set of files and folders to encapsulate in this container
@@ -257,6 +267,7 @@ CMD ["redis-server"]
 ```
 
 - Build image using Dockerfile
+
 ```
 We used a Dockerfile to prepare to build an image
 1. create container
@@ -265,7 +276,8 @@ We used a Dockerfile to prepare to build an image
 => remove intermediate containers and return final image with id
 ```
 
-- Recap
+### Recap
+
 ```
 FROM alpine
 -> download alpine image
@@ -287,7 +299,7 @@ CMD ["redis-server"]
 => Output is the image generated from previous step
 ```
 
-- Rebuilds with Cache
+### Rebuilds with Cache
 
 ``` dockerfile
 FROM alpine
@@ -295,6 +307,7 @@ RUN apk add --update redis
 RUN apk add --update gcc
 CMD ["redis-server"]
 ```
+
 ``` sh
 # no fetch or installation of redis
 # image has been cached
@@ -306,7 +319,8 @@ docker build .
 docker run 7dfdfbcf1017
 ```
 
-- Tagging an Image
+### Tagging an Image
+
 ``` sh
 docker build -t {docker id}/{repo_name}:{version} .
 docker build -t username/redis:latest .
@@ -334,7 +348,8 @@ docker run 0835898662
 ```
 
 
-- Project with Docker
+### Node js Project with Docker
+
 ```
 Create Node JS web app
 Create a Dockerfile
@@ -467,7 +482,8 @@ docker run -p 8080:5000 username/simpleweb
 ```
 
 
-- Specify a working directory
+### Specify a working directory in a Dockerfile
+
 ```sh
 # inspect file system without starting up a server
 docker run -it username/simpleweb sh
@@ -546,7 +562,8 @@ COPY ./ ./
 CMD ["npm", "start"]
 ```
 
-- Project using Docker compose
+
+### Docker Compose App overview
 
 ```
 # 1
@@ -575,6 +592,7 @@ web -> Container1[Node App]
 ```
 
 ```js
+// index.js
 const express = require('express');
 const redis = require('redis');
 
@@ -608,32 +626,40 @@ COPY ./ ./
 
 CMD["npm", "start"]
 ```
+
 ```sh
 # image id returns without tags
 docker build .
 # instead of id set tags for the image
 docker build -t username/visits:latest .
 
-# error connecting to redis(server not running)
+# ERROR! connecting to redis(server not running)
 docker run username/visits
 
-# run separate redis server
+# Run separate redis server
 docker run redis
 # still same error connecting to redis
 # because each container is isolated from each other
 # need networking infrastructure
 docker run username/visits
 
-
 # Options for connecting these Containers
-# 1. Use Docker CLI's network features (not practical)
+# 1. Use Docker CLI's network features (too complicated and not practical)
 # 2. Use Dcoker compose
-
 ```
 
-* Docker compose
+
+### Docker Compose
 
 - Separate CLI that gets installed along with Docker 
 - Used to start up multiple Docker containers at the same time
 - Automates some of the long-winded arguments we were passing to 'docker run'
 
+* Docker Compose files
+
+```
+docker build -t username/visits:latest
+docker run -p 8080:8080 username/visits
+-> docker-compose.yml (contains all the options we'd normally pass to docker-cli)
+-> docker-compose CLI
+```
