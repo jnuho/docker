@@ -383,8 +383,8 @@ app.get('/', (req, res) => {
 	res.send('Hi there');
 });
 
-app.listen(8080, () =>{
-	console.log('Listening on port 8080');
+app.listen(5000, () =>{
+	console.log('Listening on port 5000');
 });
 ```
 
@@ -456,7 +456,7 @@ CMD ["npm", "start"]
 docker build -t username/simpleweb .
 docker run username/simpleweb
 
-# open a web browser localhost:8080
+# open a web browser localhost:5000
 # ERROR site cann't be reached
 ```
 
@@ -467,7 +467,7 @@ docker run username/simpleweb
 # container Port Mapping
 # local host is not routed to container ports
 # container has its own isolated set of ports that can receive traffics
-# need to forward localhost:8080 request to one of container ports
+# need to forward localhost:8090 request to one of container ports
 # container can reach out across the internet (it can get traffics through ports)
 # port forwarding is only in RUNTIME not in Dockerfile configuration
 # docker run -p {port1}:{port2} <image id/tagname>
@@ -478,9 +478,10 @@ docker run username/simpleweb
 docker run -p {local network port}:{container port} {image id}
 
 # CHANGE index.js : app.listen(5000, ...
-docker run -p 8080:5000 username/simpleweb
-```
+docker run -p 8090:5000 username/simpleweb
 
+# Go to browser http://localhost:8090
+```
 
 ### Specify a working directory in a Dockerfile
 
@@ -508,7 +509,7 @@ CMD ["npm", "start"]
 - rebuild image
 ```sh
 docker build -t username/simpleweb .
-docker run -p 8080:8080 username/simpleweb
+docker run -p 8090:5000 username/simpleweb
 docker run -it username/simpleweb sh
 # or open up a new terminal
 docker ps
@@ -520,7 +521,7 @@ docker exec -it eeed31ee65c6 sh
 
 - Unnecessary rebuilds
 ```sh
-docker run -p 8080:8080 username/simpleweb
+docker run -p 8090:5000 username/simpleweb
 ```
 
 ```js
@@ -532,8 +533,8 @@ app.get('/', (req, res) => {
 	res.send('Bye there');
 });
 
-app.listen(8080, () =>{
-	console.log('Listening on port 8080');
+app.listen(5000, () =>{
+	console.log('Listening on port 5000');
 });
 ```
 
@@ -662,4 +663,139 @@ docker build -t username/visits:latest
 docker run -p 8080:8080 username/visits
 -> docker-compose.yml (contains all the options we'd normally pass to docker-cli)
 -> docker-compose CLI
+```
+
+Encode docker commands like```docker build``` and ```docker run``` into ```docker-compose.yml``` file
+using special syntax.
+
+Want to create containers:
+- 'redis-server' using redis image
+- 'node-app' using Dockerfile & port mapping 4001 to 8081
+
+```js
+// index.js
+const express = require('express');
+const redis = require('redis');
+
+const app = express();
+// connection to redis server
+const client = redis.createClient({
+	// host: 'https://redis-server-url-without-docker.com'
+	// port: 디폴트포트
+	host: 'redis-server',
+	port: 6379
+
+});
+client.set('visits', 0);
+
+app.get('/', (req, res) => {
+	client.get('visits', (err, visits) => {
+		res.send('Number of visits is ' + visits);
+		client.set('visits', parseInt(visits) + 1);
+	});
+});
+
+app.listen(8081, () => {
+	console.log('Listening on port 8081');
+});
+```
+
+``` yml
+# docker-compose.yml
+version: '3'
+services:
+  redis-server:
+    image: 'redis'
+  node-app:
+    build: .
+      # array of ports
+      # {port_localMachine}:{port_container}
+    ports:
+      - "4001:8081"
+```
+
+### Docker Compose Commands
+
+```
+docker run {image}=> docker-compose up
+
+docker build .
+docker run {image}=> docker-compose up --build
+
+```
+
+
+
+### Stopping Docker Compose Containers
+
+```
+# previously
+docker run -d redis
+docker ps
+docker stop ba1220ea9edc
+```
+
+
+```sh
+# Launch in background
+docker-compose up -d
+
+# Stop and Remove Containers
+docker-compose down
+```
+
+### Container Maintenance with Compose
+
+- containers that crash/hang
+- test by adding lines to occur crash whenever someone visits localhost:4001
+
+```js
+const express = require('express');
+const redis = require('redis');
+const process = require('process');
+
+const app = express();
+// connection to redis server
+const client = redis.createClient({
+	// host: 'https://redis-server-url-without-docker.com'
+	// port: 디폴트포트
+	host: 'redis-server',
+	port: 6379
+
+});
+client.set('visits', 0);
+
+app.get('/', (req, res) => {
+
+	// make server to crash
+	// 0: exited and everything is OK
+	// 1,2,3,etc: exited because something went wrong!
+	process.exit(0);
+
+	client.get('visits', (err, visits) => {
+		res.send('Number of visits is ' + visits);
+		client.set('visits', parseInt(visits) + 1);
+	});
+});
+
+app.listen(8081, () => {
+	console.log('Listening on port 8081');
+});
+```
+
+
+```sh
+# Rebuild container!
+# log: "exited with 0"
+docker-compose up --build
+
+# now localhost:4001 cannot be reached (crashed)
+# only shows 'redis' container process
+docker ps
+```
+
+### Automatic Container Restarts
+
+
+```js
 ```

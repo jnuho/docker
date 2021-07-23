@@ -1,0 +1,10 @@
+version: '3'
+services:
+  redis-server:
+    image: 'redis'
+  node-app:
+    build: .
+      # array of ports
+      # {port_localMachine}:{port_container}
+    ports:
+      - "4001:8081"
