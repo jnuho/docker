@@ -23,19 +23,9 @@ e.g. hello-world. This is specific to Linux Operating System.
 
 ``` sh
 docker version
-# if not found locally, Docker Server download from Docker hub and store it into image cache
+
+# Docker Server download from Docker hub and store it into image cache, if image is not found locally
 docker run <image name>
-
-# Override startup command inside image
-# command executables have to be included in busybox file system image to execute override command
-docker run <image name> command
-docker run busybox echo hi there
-docker run busybox ls
-
-# Override not working because hello-world image does not provide file system
-# only hello-world single file exists inside the file system
-docker run hello-world echo hi there
-docker run hello-world ls
 
 # show running container process
 docker ps
@@ -49,12 +39,30 @@ docker run busybox ping google.com
 docker ps
 ```
 
-### Container LifeCycle
-``` sh
-# create container
-docker create hello-world
+### Override startup command inside image
+```sh
+# command executables have to be included in busybox file system image
+# in order to execute override command
+docker run <image name> <override command>
+docker run busybox echo hi there
+docker run busybox ls
+```
 
-# start container (-a: show output)
+``` sh
+# Override does not work because hello-world image does not provide file system
+# only a single file hello-world exists inside the file system
+docker run hello-world echo hi there
+docker run hello-world ls
+```
+
+### Container LifeCycle
+- Create container
+``` sh
+docker create hello-world
+```
+
+- Start container (-a: show output)
+```
 docker start -a {id}
 ```
 
@@ -70,6 +78,8 @@ docker start {id}
 
 - Remove stopped container
 ``` sh
+docker rm <container_id>
+
 # delete all stopped containers, networks, dangling images, cache
 docker system prune
 ```
@@ -89,10 +99,10 @@ docker start {id}
 docker logs {id}
 docker ps
 
-# stop running container
 # SIGTERM shutdown on its own time with cleanup
 # container not shutting down in 10 seconds will fallback to docker kill
 docker stop {container_id}
+
 # SIGKILL shutdown immediately
 docker kill {container_id}
 ```
@@ -110,8 +120,10 @@ redis-cli
 # run with docker
 docker run redis
 # redis-cli cannot connect since redis only running inside container
+# override command also has this problem
 # need to get inside container and run `redis-cli`
 # need to run second command inside a container
+# instead try `docker run -it redis redis-cli`
 redis-cli
 ```
 
@@ -120,7 +132,8 @@ redis-cli
 ```sh
 # run redis-server inside docker container
 docker run redis
-# go inside running container to execute 'redis-cli'
+
+# execute 'redis-cli' inside a running container
 # exec: run another command in a container
 # -it: allow us to provide input to the container
 docker exec -it <container_id> <command>
