@@ -15,7 +15,6 @@ and Control Groups(limit resources: mem,CPU,HD,network Bandwidth),
 forms Container (grouping of resources assigned to it)
 Namespacing and Control Groups are not included by default
 e.g. hello-world. This is specific to Linux Operating System.
-
 # In Windows and MacOs, Linux Virtual Machine is used to host containers.
 ```
 
@@ -109,6 +108,9 @@ docker kill {container_id}
 
 ### Multi-command container
 
+- Containers that have a filesystem with multiple command line executables installed
+- inside one of such running containers, one can execute multiple command lines
+
 ```sh
 # run without docker and use redis-cli
 redis-server
@@ -199,36 +201,12 @@ CONTAINER ID
 <b>
 ```
 
-- Create Docker image
+
+### Create a DockerFile
 
 ```
-Dockerfile(Configuration to define how our container should behave)
--> Docker Client (CLI)
--> Docker Server
--> Build Usable Image
-```
-
-- Create a DockerFile
-
-```
-1. Specifiy a base image (like OS it includes set of useful programs)
-2. Run some commands to install additional programs
-3. Specify a command to run on container startup
-```
-
-### Create an image that runs redis-server Using Dockerfile
-
-```sh
-mkdir redis-image
-cd redis-image
-ls # Dockerfile
-```
-
-- Create Dockerfile
-
-``` dockerfile
 # Writing a Dockerfile
-# == Being given a computer with no OS and being told to install Chrome
+# == being given a computer with no OS and being told to install Chrome
 
 # install OS
 # -> start browser
@@ -237,13 +215,34 @@ ls # Dockerfile
 # -> run installer exe
 # -> run chrome.exe
 
+1. Specifiy a base image (like OS it includes set of useful programs)
+2. Run some commands to install additional programs
+3. Specify a command to run on container startup
+
+Create image that runs redis-server Using Dockerfile
+Dockerfile (Configuration to define how our container should behave)
+-> Docker Client (CLI)
+-> Docker Server
+-> Build Usable Image
+```
+
+- Create Dockerfile
+
+```sh
+mkdir redis-image
+cd redis-image
+# instruction telling Docker server what to do + argument to the instruction
+touch Dockerfile
+```
+
+```Dockerfile
 # Use an existing docker image as a base
 # alpine image might include default set of programs
-# 'RUN' will use this image to create a temporary container
 # download image if locally not found
 FROM alpine
 
-# Download and install a dependency
+# use this image to create a temporary container
+# download and install a dependency
 # alpine contains apk(alpine package manager app) commands
 # create a temporary container with the downloaded image in 'FROM'
 # inside the container, it runs 'apk add...' as a primary running process
@@ -269,20 +268,20 @@ CMD ["redis-server"]
 # generate image with build context (current directory);
 # set of files and folders to encapsulate in this container
 docker build .
+docker build -t junho/redis:latest .
 docker run [#id]
 ```
 
-``` dockerfile
-# instruction telling Docker server what to do + argument to the instruction
-FROM alpine
-RUN apk add --update redis
-CMD ["redis-server"]
+- Tagging an Image
+
+``` sh
+docker build -t {docker id}/{repo_name}:{version} .
+docker build -t username/redis:latest .
 ```
 
-- Build image using Dockerfile
+- Dockerfile to prepare to build an image
 
 ```
-We used a Dockerfile to prepare to build an image
 1. create container
 2  execute 'apk add --update redis'
 3. assign a startup-command 'redis-server'
@@ -322,24 +321,14 @@ CMD ["redis-server"]
 ```
 
 ``` sh
-# no fetch or installation of redis
-# image has been cached
+# no fetch or installation of redis: image has been cached
 # it will not use cached image if redis and gcc RUN command order changes
 # installation of gcc and redis
 docker build .
-# Successfully build 7dfdfbcf1017
-
 docker run 7dfdfbcf1017
 ```
 
-### Tagging an Image
-
-``` sh
-docker build -t {docker id}/{repo_name}:{version} .
-docker build -t username/redis:latest .
-```
-
-- Manual image Generation with Docker commit
+### Manual image Generation with Docker commit
 
 ``` dockerfile
 FROM alpine
@@ -378,7 +367,6 @@ touch package.json
 ```
 
 ``` json
-// package.json
 {
 	"dependencies":{
 		"express": "*"
@@ -408,8 +396,7 @@ FROM alpine
 # install dependencies and additional programs
 RUN npm install
 
-# default command
-# specify a command to run on container startup
+# specify default command to run on container startup
 # start nodejs server
 CMD ["npm", "start"]
 ```
@@ -417,29 +404,24 @@ CMD ["npm", "start"]
 
 - First build-ERROR 1
 ``` sh
-# ERROR 1!
-# npm not found
+# ERROR 1! npm not found
 # alpine image does not have npm installed
 docker build .
 ```
 
-- find different base image with npm install or run additional command to install npm
-- dockerhub > Explore > node
 ```Dockerfile
-# specify a base image
+# find different base image with npm install or run additional command to install npm
+# dockerhub > Explore > node
 # alpine version of an image is small and compact as possible
 # many repositories provide alpine versions of their image
 FROM node:alpine
-
 RUN npm install
-
 CMD ["npm", "start"]
 ```
 
 - Second build-ERROR 2
 ```sh
-# No such file or directory package.json
-# you should commit this file
+# 'package.json' No such file or directory package.json you should commit this file
 # json file does not exist inside node:alpine image File System
 # json file is in local Hard Drive which is disconnected from docker image file system
 # files inside project directory are not available inside docker container
@@ -470,7 +452,7 @@ docker build -t username/simpleweb .
 docker run username/simpleweb
 
 # open a web browser localhost:5000
-# ERROR site cann't be reached
+# ERROR site cann't be reached (port 5000 is for container)
 ```
 
 
@@ -491,9 +473,9 @@ docker run username/simpleweb
 docker run -p {local network port}:{container port} {image id}
 
 # CHANGE index.js : app.listen(5000, ...
-docker run -p 8090:5000 username/simpleweb
+docker run -p 4001:5000 username/simpleweb
 
-# Go to browser http://localhost:8090
+# Go to browser http://localhost:4001
 ```
 
 ### Specify a working directory in a Dockerfile
@@ -522,7 +504,7 @@ CMD ["npm", "start"]
 - rebuild image
 ```sh
 docker build -t username/simpleweb .
-docker run -p 8090:5000 username/simpleweb
+docker run -p 4001:5000 username/simpleweb
 docker run -it username/simpleweb sh
 # or open up a new terminal
 docker ps
@@ -534,7 +516,7 @@ docker exec -it eeed31ee65c6 sh
 
 - Unnecessary rebuilds
 ```sh
-docker run -p 8090:5000 username/simpleweb
+docker run -p 4001:5000 username/simpleweb
 ```
 
 ```js
@@ -593,7 +575,6 @@ web -> Container1[Node App]
 ```
 
 ```json
-// package.json
 {
 	"dependencies": {
 		"express": "*",
@@ -642,9 +623,6 @@ CMD["npm", "start"]
 ```
 
 ```sh
-# image id returns without tags
-docker build .
-# instead of id set tags for the image
 docker build -t username/visits:latest .
 
 # ERROR! connecting to redis(server not running)
@@ -673,7 +651,7 @@ docker run username/visits
 
 ```
 docker build -t username/visits:latest
-docker run -p 8080:8080 username/visits
+docker run -p 4001:8081 username/visits
 -> docker-compose.yml (contains all the options we'd normally pass to docker-cli)
 -> docker-compose CLI
 ```
@@ -685,6 +663,18 @@ Want to create containers:
 - 'redis-server' using redis image
 - 'node-app' using Dockerfile & port mapping 4001 to 8081
 
+``` yml
+# docker-compose.yml
+version: '3'
+services:
+	redis-server:
+		image: 'redis'
+	node-app:
+		build: .
+		ports:
+		  - "4001:8081"
+```
+
 ```js
 // index.js
 const express = require('express');
@@ -692,9 +682,10 @@ const redis = require('redis');
 
 const app = express();
 // connection to redis server
+// specify default port 6379 that the redis server is running on
 const client = redis.createClient({
 	// host: 'https://redis-server-url-without-docker.com'
-	// port: 디폴트포트
+	// port: 디폴트포트 6379
 	host: 'redis-server',
 	port: 6379
 
@@ -713,31 +704,19 @@ app.listen(8081, () => {
 });
 ```
 
-``` yml
-# docker-compose.yml
-version: '3'
-services:
-  redis-server:
-    image: 'redis'
-  node-app:
-    build: .
-      # array of ports
-      # {port_localMachine}:{port_container}
-    ports:
-      - "4001:8081"
-```
 
 ### Docker Compose Commands
 
 ```
-docker run {image}=> docker-compose up
+docker run {image}
+=> docker-compose up
+
 
 docker build .
-docker run {image}=> docker-compose up --build
-
+docker run {image}
+# rebuild with --build tag
+=> docker-compose up --build
 ```
-
-
 
 ### Stopping Docker Compose Containers
 
@@ -759,22 +738,19 @@ docker-compose down
 
 ### Container Maintenance with Compose
 
-- containers that crash/hang
+- handle containers that crash/hang
 - test by adding lines to occur crash whenever someone visits localhost:4001
 
 ```js
 const express = require('express');
 const redis = require('redis');
 const process = require('process');
-
-const app = express();
-// connection to redis server
+const app = express(); // connection to redis server
 const client = redis.createClient({
 	// host: 'https://redis-server-url-without-docker.com'
-	// port: 디폴트포트
+	// port: 포트 (디폴트 6379)
 	host: 'redis-server',
 	port: 6379
-
 });
 client.set('visits', 0);
 
@@ -809,6 +785,80 @@ docker ps
 
 ### Automatic Container Restarts
 
+Restart Policies| Description
+---|---
+"no" | Never attempt to restart this container if it stops or crashed
+always | If this container stops "for any reason" always attempt to restart it
+on-failure | Only restart if the container stops with an error code
+unless-stopped | Always restart unless we(the developers) forcibly stop it
+
+```yml
+version: '3'
+services:
+  redis-server:
+    image: 'redis'
+  node-app:
+    restart: always
+    build: .
+      # - array of ports
+      # {port_localMachine}:{port_container}
+    ports:
+      - "4001:8081"
+```
+
+```sh
+docker-compose up
+# restart: always : logs of restarting nodejs server
+# restart: on-failure : logs of not restarting (because nodejs server exited with 0)
+#	or change exit(100) and rebuilt : docker-compose up --build
+# restart: unless-stopped : logs of not restarting (because nodejs server exited with 0)
+```
 
 ```js
+const express = require('express');
+const redis = require('redis');
+const process = require('process');
+
+const app = express();
+// connection to redis server
+const client = redis.createClient({
+	// host: 'https://redis-server-url-without-docker.com'
+	// port: 포트 (디폴트 6379)
+	host: 'redis-server',
+	port: 6379
+});
+client.set('visits', 0);
+
+app.get('/', (req, res) => {
+
+	// make server to crash
+	// 0: exited and everything is OK
+	// 1,2,3,etc: exited because something went wrong!
+	process.exit(0);
+
+	client.get('visits', (err, visits) => {
+		res.send('Number of visits is ' + visits);
+		client.set('visits', parseInt(visits) + 1);
+	});
+});
+
+app.listen(8081, () => {
+	console.log('Listening on port 8081');
+});
 ```
+
+- Container Status with Docker Compose
+
+```sh
+# must be executed in the same directory as 'docker-compose.yml'
+docker-compose ps
+```
+
+
+### Development Workflow
+
+```
+Development -> Testing -> Deployment
+```
+
+

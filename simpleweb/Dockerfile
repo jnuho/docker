@@ -1,6 +1,5 @@
 # specify base image
 FROM node:alpine
-
 # any following command will be executed relative to this path in the container
 WORKDIR /usr/app
 
