@@ -861,4 +861,145 @@ docker-compose ps
 Development -> Testing -> Deployment
 ```
 
+- Flow Specifics
+```
+# Github workflow
+feature->master-> Travis CI->AWS Hosting
 
+- DEV: feature->PR merge to master
+- TEST: code pushed to Travis CI, run test
+- PROD:  Travis CI deply to AWS Elastic beanstalk
+
+=> Docker makes it easier
+```
+
+### Project Generation
+
+- Install nodejs and npm
+```sh
+sudo apt install npm
+sudo apt install nodejs
+
+# install a tool in order to create react project
+npm install -g create-react-app
+
+# Do the following https://stackoverflow.com/a/40905762 and
+# append 'export PATH=$HOME/.npm-global/bin:$PATH' to ~/.profile 
+source ~/.profile
+
+# Create react project
+create-react-app frontend
+
+# wrap this react project inside a Docker Container
+```
+
+- Necessary commands
+
+Commands | Descriptions
+---|---
+|```npm run start``` | Starts up a development server. For development use only|
+|```npm run test``` | Runs tests associated with the project|
+|```npm run build``` | Builds a production version of the application|
+
+### Creating the Dev Dockerfile
+
+```
+# In Development
+Docker Container
+[npm run start]
+
+# In Production
+Docker Container
+[npm run build]
+```
+
+How to wrap up react app with Docker container
+
+- DEV: Dockerfile.dev
+- PRD: Dockerfile
+
+```Dockerfile
+FROM node:alpine
+
+WORKDIR /app
+
+COPY package.json .
+RUN npm install
+
+COPY . .
+
+CMD ["npm", "run", "start"]
+```
+
+- Duplicating dependencies
+
+```sh
+# Sending build context to Docker daemon 193.3MB
+docker build -f Dockerfile.dev .
+# 	: create-react-app tool created a react project and 
+# 	installed all the dependencies '193.3MB' in the working dir: 'node_modules'
+# 	need to use Docker image instead
+
+# much faster build!
+rm -rf node_modules
+docker build -f Dockerfile.dev .
+```
+
+- Starting the container
+
+```sh
+docker run -p 3000:3000 4ab3744f206b
+```
+
+```js
+// ./src/App.js
+// EDIT something : rebuild required
+// => workaround to automatically propagate the change to the containers
+```
+
+- Docker Volume
+
+```
+Local dir -> Docker Container
+Instead of COPYing all the local dir to container,
+volume can set up a refrence that points back to files in local machines
+: it maps docker container folders to local machine folders
+: syntax might be complicated in docker run
+```
+
+```sh
+# -v /app/node_modules		Put a bookmark on the node_modules folder
+# -v $(pwd):/app			Map the pwd(frontend) into the /app folder
+# 	/frontend 			<- /app
+#		/src 			<- ref
+#		/public 		<- ref
+#		/node_modules 	<- ref
+
+docker run -p 3000:3000 -v /app/node_modules -v $(pwd):/app <image_id>
+
+# rebuild
+docker build -f Dockerfile.dev .
+# ERROR: react-scripts: not found
+# node_modules folder missing in local(frontend) it was deleted!
+docker run -p 3000:3000 -v $(pwd):/app 6f0e74155767
+```
+
+- Bookmarking Volumes
+
+```sh
+docker run -p 3000:3000 -v /app/node_modules -v $(pwd):/app 6f0e74155767
+```
+
+- Shorthand with Docker Compose
+
+```yml
+version: '3'
+services:
+  web-react:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - /app/node_modules
+      - .:/app
+```
