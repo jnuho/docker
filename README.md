@@ -173,7 +173,7 @@ docker exec -it <docker_container> sh
 - Starting a shell after starting a container
 
 ``` sh
-# go inside shell without running any other commands
+# go inside shell without running any other commands (no default override command)
 docker run -it busybox sh
 > ls
 > cd ~/
@@ -199,6 +199,23 @@ docker ps
 CONTAINER ID
 <a>
 <b>
+```
+
+### Network
+
+- From the book 'Docker and Kubernetes for Java'
+```sh
+# -d, -driver="bridge"
+docker network create myNetwork
+docker network inspect myNetwork
+docker run -it --net=myNetwork tomcat
+
+# 'myPostgreSQL' container can use the same network as the other container, 'myTomcat', use
+# they can directly communite each other in the same network, 'bridge'
+# though the network itself isolates the containers from external networks
+# [Docker Host] -> [ISOLATED Network(container1, 2, 3, ...)]
+docker run -it --net=bridge myTomcat
+docker run -it --net=container:myTomcat myPostgreSQL
 ```
 
 
