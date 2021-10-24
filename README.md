@@ -203,9 +203,31 @@ CONTAINER ID
 
 ### Network
 
-- From the book 'Docker and Kubernetes for Java'
+From the book 'Docker and Kubernetes for Java'
+
+- Docker network types
+  - Bridge (default)
+  - Host
+    - fast network speed
+    - for performance
+    - vulnerable security
+    - accessible through the host's ip address
+    - requires port mapping to reach services inside the container
+  - None
+    - does not configure networking at all
+    - networking is disabled
+
+- Networking commands
+
 ```sh
-# -d, -driver="bridge"
+docker network ls
+docker network create {network_name}
+docker network rm {network_name}
+docker network connect {network_name}
+docker network disconnect {network_name}
+
+# docker network create 커멘드 옵션
+# -d, --driver="bridge"
 docker network create myNetwork
 docker network inspect myNetwork
 docker run -it --net=myNetwork tomcat
@@ -218,6 +240,22 @@ docker run -it --net=bridge myTomcat
 docker run -it --net=container:myTomcat myPostgreSQL
 ```
 
+- Exposing and Mapping ports
+
+```Dockerfile
+# Official 'tomcat' image Dockerfile fragment
+FROM openjdk:8-jre-alpine
+ENV CATALINA_HOME /usr/local/tomcat
+ENV PATH $CATALINA_HOME/bin:$PATH
+RUN mkdir -p "$CATALINA_HOME"
+WORKDIR "$CATALINA_HOME"
+EXPOSE 8080
+CMD ["catalina.sh", "run"]
+```
+
+```sh
+docker run -it -name myTomcat --net=myNetwork tomcat
+```
 
 ### Create a DockerFile
 
